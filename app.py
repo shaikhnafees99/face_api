@@ -71,7 +71,9 @@ async def recognize_face(file: UploadFile = File(...)):
             results.append("Unknown")
     
     return {"results": results}
-
+@app.get("/health")
+async def chk():
+    return ""
 # Run the application
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
