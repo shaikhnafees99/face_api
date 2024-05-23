@@ -28,23 +28,23 @@ async def update_item(payload: Any = Body(None)):
 
 
 @app.post("/train/")
-async def train_face(label: str, file: UploadFile = File(...)):
+async def train_face(face_id: str, file: UploadFile = File(...)):
     # Load the uploaded image file
     image = face_recognition.load_image_file(file.file)
     # Find face encodings
     face_encodings = face_recognition.face_encodings(image)
     
     if len(face_encodings) == 0:
-        raise HTTPException(status_code=400, detail="No face found in the image.")
+        return {'face_id': 'NA'}
     
     # Assuming the first face found is the one to be used for training
     face_encoding = face_encodings[0]
     
     # Add the face encoding and its label to the known faces
     known_face_encodings.append(face_encoding)
-    known_face_labels.append(label)
+    known_face_labels.append(face_id)
     
-    return {"message": f"Face with label '{label}' has been trained."}
+    return {'face_id': face_id}
 
 @app.post("/recognize/")
 async def recognize_face(file: UploadFile = File(...)):
@@ -54,9 +54,9 @@ async def recognize_face(file: UploadFile = File(...)):
     face_encodings = face_recognition.face_encodings(image)
     
     if len(face_encodings) == 0:
-        return {"message": "No faces found in the image."}
+        return {'face_id': 'NA'}
     
-    results = []
+    results = ''
     for face_encoding in face_encodings:
         # Compare this face encoding with known faces
         matches = face_recognition.compare_faces(known_face_encodings, face_encoding)
@@ -66,9 +66,9 @@ async def recognize_face(file: UploadFile = File(...)):
         best_match_index = np.argmin(face_distances)
         if matches[best_match_index]:
             label = known_face_labels[best_match_index]
-            results.append(label)
+            results=label
         else:
-            results.append("Unknown")
+            results='NA'
     
     return {"results": results}
 @app.get("/health")
