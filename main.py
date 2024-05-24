@@ -70,7 +70,7 @@ async def recognize_face(file: UploadFile = File(...)):
         else:
             results='NA'
     
-    return {"results": results}
+    return {"face_id": results}
 @app.get("/health")
 async def chk():
     return ""
