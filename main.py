@@ -5,6 +5,7 @@ import face_recognition_models
 import face_recognition
 import numpy as np
 import os
+import pickle
 from typing import List
 import uvicorn
 from pydantic import BaseModel
@@ -15,7 +16,10 @@ app = FastAPI()
 # In-memory storage for face encodings and their labels
 known_face_encodings = []
 known_face_labels = []
-
+if os.path.exists('face_data.pkl'):
+    with open('face_data.pkl', 'rb') as f:
+        print('load pkl')
+        known_face_encodings, known_face_labels = pickle.load(f)
 
 @app.get('/')
 async def index():
@@ -44,7 +48,10 @@ async def train_face(face_id: str, file: UploadFile = File(...)):
     known_face_encodings.append(face_encoding)
     known_face_labels.append(face_id)
     
+    with open('face_data.pkl', 'wb') as f:
+        pickle.dump((known_face_encodings, known_face_labels), f)
     return {'face_id': face_id}
+
 
 @app.post("/recognize/")
 async def recognize_face(file: UploadFile = File(...)):
@@ -56,7 +63,7 @@ async def recognize_face(file: UploadFile = File(...)):
     if len(face_encodings) == 0:
         return {'face_id': 'NA'}
     
-    results = ''
+    results = 'NA'
     for face_encoding in face_encodings:
         # Compare this face encoding with known faces
         matches = face_recognition.compare_faces(known_face_encodings, face_encoding)
@@ -67,9 +74,7 @@ async def recognize_face(file: UploadFile = File(...)):
         if matches[best_match_index]:
             label = known_face_labels[best_match_index]
             results=label
-        else:
-            results='NA'
-    
+        
     return {"face_id": results}
 @app.get("/health")
 async def chk():
@@ -77,3 +82,4 @@ async def chk():
 # Run the application
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
+    
